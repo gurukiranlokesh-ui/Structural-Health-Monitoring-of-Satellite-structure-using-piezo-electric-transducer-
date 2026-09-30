@@ -1,0 +1,756 @@
+Yes. For GitHub, the README should look like it was written by an engineering student/researcher—not like a generated marketing page. I would remove the excessive emojis, generic claims, fake badges, and exaggerated wording.
+
+Below is a **paste-ready `README.md`** based directly on your full report. It uses normal technical GitHub documentation style and keeps the actual architecture, hardware, software and ML work from the report. :chatgpt-content-reference{index="0"}
+
+```markdown
+# Satellite Structural Health Monitoring Using Piezoelectric Sensors and Machine Learning
+
+A prototype Structural Health Monitoring (SHM) system for satellite structures using piezoelectric transducers, inertial sensors, Raspberry Pi, LoRa communication, Python-based data processing, and machine-learning-based anomaly detection.
+
+The project focuses on collecting structural response data, transmitting the measurements wirelessly, and analysing the resulting data to identify abnormal structural behaviour.
+
+---
+
+## Overview
+
+Structural Health Monitoring is an important part of maintaining the integrity and reliability of aerospace structures. Satellite structures are exposed to mechanical loads, vibration, thermal variations, launch conditions, and other environmental effects.
+
+This project develops a prototype SHM architecture based primarily on piezoelectric transducers. The transducers are used to obtain electrical signals resulting from mechanical loading of the structure. An inertial sensor is used to monitor acceleration and vibration.
+
+The acquired sensor data is converted into digital form, processed using a Raspberry Pi, and transmitted through a LoRa communication link. At the receiving end, an ESP8266-based system receives and decodes the data.
+
+For offline analysis, Python is used to process structural datasets and investigate anomaly detection using Isolation Forest and Local Outlier Factor (LOF).
+
+---
+
+## Objectives
+
+The main objectives of the project are:
+
+- Develop a prototype structural health monitoring system for satellite structures.
+- Use piezoelectric transducers to monitor structural response.
+- Acquire vibration information using an inertial sensor.
+- Convert analogue sensor signals into digital data.
+- Transmit sensor data wirelessly using LoRa.
+- Log acquired measurements for further analysis.
+- Develop a Python-based data analysis workflow.
+- Compare healthy and unhealthy structural datasets.
+- Investigate machine-learning methods for anomaly detection.
+- Visualise current, voltage, stress, strain, and anomaly-score data.
+
+---
+
+## System Architecture
+
+The overall system is divided into a sensing/transmission section and a receiving/analysis section.
+
+```text
+                   SATELLITE STRUCTURE
+                          |
+              +-----------+-----------+
+              |                       |
+              v                       v
+      Piezoelectric Sensors     GY-87 Sensor
+          PZT1 - PZT4           Accelerometer
+              |                       |
+              v                       |
+          PCF8591 ADC                 |
+              |                       |
+              +-----------+-----------+
+                          |
+                          v
+                   Raspberry Pi Zero
+                          |
+                    Data Acquisition
+                          |
+                    Signal Processing
+                          |
+                          v
+                     LoRa Module
+                          |
+                    Wireless Link
+                          |
+                          v
+                  LoRa Receiver
+                          |
+                          v
+                   NodeMCU ESP8266
+                          |
+                JSON Data Processing
+                          |
+              +-----------+-----------+
+              |                       |
+              v                       v
+        Serial Monitoring        Status Indicator
+                                      |
+                              RGB LED (R/G/B)
+```
+
+For the data-analysis stage:
+
+```text
+Sensor / Experimental Data
+            |
+            v
+      Data Preprocessing
+            |
+            v
+      Feature Extraction
+            |
+            v
+      Data Standardisation
+            |
+            +-------------------+
+            |                   |
+            v                   v
+    Isolation Forest           LOF
+            |                   |
+            +---------+---------+
+                      |
+                      v
+              Anomaly Detection
+                      |
+                      v
+              Data Visualisation
+```
+
+The sensing and communication architecture described above follows the methodology and circuit implementation presented in the project report. :chatgpt-content-reference{index="1"}
+
+---
+
+## Hardware
+
+The prototype uses the following components:
+
+| Component | Purpose |
+|---|---|
+| Piezoelectric Transducers | Detection of structural mechanical response |
+| PCF8591 ADC | Conversion of analogue sensor signals |
+| GY-87 / MPU6050 | Acceleration and inertial measurements |
+| Raspberry Pi Zero 2 W | Data acquisition and processing |
+| LoRa SX1278 / Ra-02 | Wireless data transmission |
+| NodeMCU ESP8266 | Receiving and processing LoRa data |
+| RGB LED | Receiver status indication |
+| LM2596 | Voltage regulation |
+
+The report documents the individual hardware components and their intended functions in the prototype. :chatgpt-content-reference{index="2"}
+
+---
+
+## Sensor Acquisition
+
+Four piezoelectric channels are used in the proposed acquisition system.
+
+```text
+PZT1 -> PCF8591 AIN0
+PZT2 -> PCF8591 AIN1
+PZT3 -> PCF8591 AIN2
+PZT4 -> PCF8591 AIN3
+```
+
+The PCF8591 communicates with the Raspberry Pi through the I2C interface.
+
+The inertial sensor is also connected through I2C and provides acceleration measurements that are used to determine the vibration level.
+
+The report specifies the following interfaces:
+
+```text
+PCF8591 I2C Address : 0x48
+GY-87 I2C Address   : 0x68
+LoRa DIO0           : GPIO 17
+```
+
+The LoRa module is connected to the Raspberry Pi using SPI. :chatgpt-content-reference{index="3"}
+
+---
+
+## Data Acquisition
+
+The Raspberry Pi is responsible for collecting measurements from the sensors.
+
+The transmitter software performs the following operations:
+
+1. Initialise the I2C bus.
+2. Initialise the GY-87 sensor.
+3. Initialise the LoRa module.
+4. Read the four piezoelectric channels.
+5. Read acceleration data.
+6. Calculate the vibration magnitude.
+7. Add a timestamp to the measurements.
+8. Create a JSON data packet.
+9. Transmit the packet through LoRa.
+10. Store the data locally.
+
+A simplified representation of the transmitted packet is:
+
+```json
+{
+    "time": "YYYY-MM-DD HH:MM:SS",
+    "PZT1": 0,
+    "PZT2": 0,
+    "PZT3": 0,
+    "PZT4": 0,
+    "vibration": 0.0
+}
+```
+
+The transmitter implementation in the report also uses Python threading for the data-collection process. :chatgpt-content-reference{index="4"}
+
+---
+
+## LoRa Communication
+
+LoRa is used as the wireless communication link between the transmitter and receiver.
+
+The transmitter packages the sensor measurements into JSON before transmission.
+
+The receiver monitors incoming LoRa packets and extracts the individual parameters from the received JSON data.
+
+The receiver extracts:
+
+```text
+Time
+PZT1
+PZT2
+PZT3
+PZT4
+Vibration
+```
+
+The receiver also provides a simple visual indication of the communication state using an RGB LED:
+
+```text
+Red   -> No signal
+Green -> Signal received
+Blue  -> Error
+```
+
+The ESP8266 receiver implementation uses the `LoRa` and `ArduinoJson` libraries. :chatgpt-content-reference{index="5"}
+
+---
+
+## Structural Parameters
+
+The project considers several parameters when evaluating structural behaviour.
+
+### Stress
+
+The basic stress relationship used in the report is:
+
+```text
+σ = F / A
+```
+
+where:
+
+- `σ` is the stress.
+- `F` is the applied force.
+- `A` is the area over which the force acts.
+
+### Strain
+
+The strain relationship is:
+
+```text
+ε = ΔL / L
+```
+
+where:
+
+- `ε` is strain.
+- `ΔL` is the change in length.
+- `L` is the original length.
+
+### Vibration
+
+Acceleration measurements from the inertial sensor are used to determine the vibration magnitude of the structure.
+
+### Temperature
+
+Temperature is considered as an additional factor affecting structural behaviour, particularly because thermal variations can contribute to thermal stress and changes in material properties.
+
+These parameters are used in the report to describe the expected behaviour of healthy and unhealthy structures. :chatgpt-content-reference{index="6"}
+
+---
+
+## Piezoelectric Transducer Model
+
+The project uses a simplified mathematical model to relate the electrical response of a piezoelectric transducer to mechanical stress.
+
+The report defines the electric displacement as:
+
+```text
+D = dT
+```
+
+where:
+
+- `D` = electric displacement
+- `d` = piezoelectric charge constant
+- `T` = mechanical stress
+
+The charge generated by the transducer is represented by:
+
+```text
+Q = D A
+```
+
+and the generated current is related to the rate of change of charge:
+
+```text
+I = dQ/dt
+```
+
+Combining these relationships gives the basis for estimating stress from the electrical response of the piezoelectric element.
+
+The model assumes constant transducer area and piezoelectric coefficient, ideal conversion, quasi-static loading, minimal leakage, and stable polarisation. These assumptions should be considered when applying the model to practical hardware. :chatgpt-content-reference{index="7"} :chatgpt-content-reference{index="8"}
+
+---
+
+## Signal Processing
+
+The proposed system includes signal-conditioning and filtering as part of the data-processing chain.
+
+The report describes the use of low-pass and high-pass Butterworth filtering to reduce unwanted components from the acquired signals before anomaly analysis.
+
+The general processing sequence is:
+
+```text
+Sensor Data
+    |
+    v
+ADC Conversion
+    |
+    v
+Data Acquisition
+    |
+    v
+Signal Conditioning / Filtering
+    |
+    v
+Feature Extraction
+    |
+    v
+Anomaly Detection
+```
+
+The methodology described in the report uses filtered sensor data as input for subsequent analysis. :chatgpt-content-reference{index="9"}
+
+---
+
+## Machine Learning
+
+The project investigates two anomaly-detection algorithms:
+
+- Isolation Forest
+- Local Outlier Factor (LOF)
+
+The machine-learning section uses separate healthy and unhealthy datasets.
+
+The features used in the analysis include:
+
+```text
+time
+current
+voltage
+stress
+strain
+gx
+gy
+gz
+current_voltage
+stress_strain
+```
+
+Two additional derived features are created:
+
+```text
+current_voltage = current × voltage
+stress_strain   = stress × strain
+```
+
+Before model training, the features are standardised using `StandardScaler`.
+
+---
+
+## Isolation Forest
+
+Isolation Forest is used to identify observations that differ from the normal structural data.
+
+The implementation performs hyperparameter tuning using `GridSearchCV`.
+
+The parameters explored include:
+
+```text
+n_estimators
+max_samples
+contamination
+max_features
+```
+
+The model is trained using the healthy dataset and subsequently used to identify anomalous observations in the unhealthy dataset.
+
+The implementation uses:
+
+```text
+-1 -> anomaly
+ 1 -> normal
+```
+
+for the Isolation Forest predictions. :chatgpt-content-reference{index="10"}
+
+---
+
+## Local Outlier Factor
+
+Local Outlier Factor is used as a second anomaly-detection method.
+
+The implementation performs parameter tuning for:
+
+```text
+n_neighbors
+contamination
+```
+
+LOF provides an additional method for examining whether individual observations differ from their surrounding data distribution.
+
+Using both methods allows the project to compare different approaches to identifying unusual structural behaviour.
+
+---
+
+## Data Visualisation
+
+Plotly is used to generate time-series plots for the structural datasets.
+
+The report compares:
+
+```text
+Current
+Voltage
+Stress
+Strain
+```
+
+between healthy and unhealthy structures.
+
+It also generates anomaly-score distributions for the Isolation Forest and LOF models.
+
+The visualisation provides a way to inspect differences in the behaviour of the two datasets and to examine the distribution of the anomaly scores. :chatgpt-content-reference{index="11"}
+
+---
+
+## Results
+
+The analysis presented in the report shows differences between the healthy and unhealthy datasets.
+
+### Current
+
+The unhealthy dataset shows greater fluctuations and higher peaks compared with the healthy dataset.
+
+### Voltage
+
+The voltage values remain relatively stable in both datasets, although differences between the two datasets can be observed.
+
+### Stress
+
+The unhealthy dataset shows more noticeable peaks and fluctuations in stress.
+
+### Strain
+
+The strain values remain relatively close between the datasets, but the unhealthy data shows greater variation.
+
+In general, the report observes smoother and more consistent behaviour in the healthy dataset, while the unhealthy dataset contains greater fluctuations and variation. :chatgpt-content-reference{index="12"}
+
+---
+
+## Software
+
+### Raspberry Pi
+
+The transmitter software is written in Python and uses libraries for:
+
+```text
+I2C communication
+GPIO control
+LoRa communication
+JSON data handling
+Threading
+```
+
+The main data-acquisition process continuously reads the sensors, generates the measurement packet, transmits it, and records the data locally. :chatgpt-content-reference{index="13"}
+
+### ESP8266
+
+The receiver is implemented using the Arduino environment with:
+
+```cpp
+#include <ESP8266WiFi.h>
+#include <LoRa.h>
+#include <ArduinoJson.h>
+```
+
+The receiver parses the incoming JSON packet and outputs the extracted measurements through the serial interface. :chatgpt-content-reference{index="14"}
+
+### Python Analysis
+
+The machine-learning and visualisation workflow uses:
+
+```text
+Python
+Pandas
+Plotly
+Scikit-learn
+```
+
+---
+
+## Suggested Repository Structure
+
+A possible organisation of the source code is:
+
+```text
+satellite-shm/
+│
+├── README.md
+├── requirements.txt
+│
+├── transmitter/
+│   ├── sensor_acquisition.py
+│   └── lora_transmitter.py
+│
+├── receiver/
+│   └── lora_receiver.ino
+│
+├── ml/
+│   ├── anomaly_detection.py
+│   └── visualization.py
+│
+├── data/
+│   ├── healthy.csv
+│   └── unhealthy.csv
+│
+├── hardware/
+│   ├── transmitter-circuit.png
+│   └── receiver-circuit.png
+│
+├── results/
+│   ├── anomaly-scores/
+│   └── plots/
+│
+└── docs/
+    └── project-report.pdf
+```
+
+This is a suggested repository structure and does not imply that the original project report contained these exact folders.
+
+---
+
+## Installation
+
+For the Python analysis environment:
+
+```bash
+git clone https://github.com/<your-username>/<your-repository>.git
+cd <your-repository>
+
+pip install -r requirements.txt
+```
+
+Example `requirements.txt`:
+
+```text
+pandas
+plotly
+scikit-learn
+```
+
+Hardware-specific Python packages such as `smbus2` and `RPi.GPIO` should be installed on the Raspberry Pi environment.
+
+---
+
+## Running the Project
+
+### 1. Start the transmitter
+
+Connect the sensors and LoRa module to the Raspberry Pi and run the transmitter program:
+
+```bash
+python transmitter/sensor_acquisition.py
+```
+
+The program reads the sensor values, generates the data packet, transmits it through LoRa, and logs the measurements.
+
+### 2. Start the receiver
+
+Upload the ESP8266 receiver program:
+
+```text
+receiver/lora_receiver.ino
+```
+
+to the NodeMCU using the Arduino IDE.
+
+Open the Serial Monitor to view received packets.
+
+### 3. Run the machine-learning analysis
+
+Place the healthy and unhealthy datasets inside:
+
+```text
+data/
+```
+
+and run:
+
+```bash
+python ml/anomaly_detection.py
+```
+
+The analysis performs preprocessing, model training, anomaly detection, and visualisation.
+
+---
+
+## Limitations
+
+This project is a prototype and research-oriented implementation.
+
+The mathematical model uses several simplifying assumptions, including ideal piezoelectric conversion, constant transducer parameters, quasi-static loading, minimal electrical leakage, and stable polarisation.
+
+The prototype should therefore not be considered a flight-qualified satellite structural-health monitoring system.
+
+A flight implementation would require additional work in areas such as:
+
+- Sensor calibration
+- Environmental qualification
+- Thermal-vacuum testing
+- Radiation considerations
+- Vibration qualification
+- Spacecraft power constraints
+- Communication reliability
+- Sensor redundancy
+- Fault tolerance
+- Electromagnetic compatibility
+- Long-duration testing
+- Space-qualified electronics
+
+---
+
+## Future Work
+
+The report identifies several possible improvements:
+
+- Improve error handling.
+- Add additional sensors.
+- Optimise power consumption.
+- Expand the structural monitoring capability.
+- Improve the anomaly-detection process.
+- Develop more comprehensive real-time monitoring.
+
+Future versions could also integrate the telemetry system with a dedicated ground-station application for real-time plotting and structural-health status monitoring. :chatgpt-content-reference{index="15"}
+
+---
+
+## Project Report
+
+The complete project report contains the detailed methodology, hardware architecture, mathematical modelling, communication system, software implementation, machine-learning analysis, plots, and results.
+
+The report is available in the repository under:
+
+```text
+docs/project-report.pdf
+```
+
+---
+
+## Technologies Used
+
+**Hardware**
+
+- Raspberry Pi Zero 2 W
+- NodeMCU ESP8266
+- Piezoelectric Transducers
+- PCF8591 ADC
+- GY-87 / MPU6050
+- LoRa SX1278 / Ra-02
+- LM2596
+- RGB LED
+
+**Software**
+
+- Python
+- Arduino / C++
+- I2C
+- SPI
+- LoRa
+- JSON
+
+**Data Analysis**
+
+- Pandas
+- Plotly
+- Scikit-learn
+- StandardScaler
+- GridSearchCV
+- Isolation Forest
+- Local Outlier Factor
+
+---
+
+## Project Status
+
+**Status:** Prototype / Academic Project
+
+**Application:** Satellite Structural Health Monitoring
+
+**Primary sensing:** Piezoelectric transducers and inertial sensing
+
+**Wireless communication:** LoRa
+
+**Edge platform:** Raspberry Pi Zero 2 W
+
+**Receiver:** NodeMCU ESP8266
+
+**Data analysis:** Python
+
+**Anomaly detection:** Isolation Forest and Local Outlier Factor
+
+---
+
+## Author
+
+**Guru Kiran Lokesh**
+
+Aerospace Engineering
+
+---
+
+## Acknowledgements
+
+This project was developed as an academic study into the application of structural health monitoring techniques to satellite structures, with a focus on piezoelectric sensing, wireless data transmission, Python-based analysis, and machine-learning-based anomaly detection.
+
+```
+
+### One thing I would change before you publish
+
+Don't put the **entire 58-page report inside the README**. Keep the README as the entry point and put the report here:
+
+```text
+docs/
+└── project-report.pdf
+```
+
+Then your GitHub front page will look much more like a genuine engineering project repository:
+
+```text
+Satellite Structural Health Monitoring
+│
+├── README.md                 ← GitHub landing page
+├── requirements.txt
+├── transmitter/
+├── receiver/
+├── ml/
+├── data/
+├── hardware/
+├── results/
+└── docs/
+    └── project-report.pdf   ← full 58-page report
