@@ -7,10 +7,10 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 
 # Loading of healthy satellite structure data
-healthy_data = pd.read_csv(r'C:\Users\kiran\OneDrive\Desktop\final healthy.csv')
+healthy_data = pd.read_csv(add healthy data file.csv')
 
 # Loading of unhealthy satellite structure data
-unhealthy_data = pd.read_csv(r'C:\Users\kiran\OneDrive\Desktop\final unhealthy.csv')
+unhealthy_data = pd.read_csv(add unhealthy data file.csv')
 
 # Extracting the features of data of healthy data
 healthy_data['current_voltage'] = healthy_data['current'] * healthy_data['voltage']
